@@ -1,0 +1,238 @@
+from flask import Flask, request, abort
+import csv
+from multiprocessing import Pool
+from nupic.frameworks.opf.model_factory import ModelFactory
+import datetime
+import model_cpu
+import model_mem
+import model_disk
+import net_params
+from multiprocessing import Process
+from nupic.algorithms import anomaly_likelihood
+import shutil
+import os
+import time
+import requests
+import subprocess
+from subprocess import call
+import numpy as np
+from flask.json import jsonify
+import json
+from flask import Response
+
+anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
+DATE_FORMAT = "%m/%d/%y %H:%M"
+finalUtilityCpu=0.0 
+SECONDS_PER_STEP= 15
+adaptresult = {'metric': ' ', 'value':0, 'cost':0}
+adaptoutcome = {'metric': ' ', 'value':0, 'cost':0, 'msg':''}
+results=0
+resultsA= []
+prometheus='192.168.99.100'
+app = Flask(__name__)
+aresult = {'metric': ' ', 'value':0, 'prediction':0, 'anomalyScore':0,'anomalyLikelihood':0}
+
+
+@app.route('/mem')
+def get_mem_observation():
+    model_mem_model = ModelFactory.create(model_mem.MODEL_PARAMS)
+    model_mem_model.enableInference({"predictedField": "mem"})
+    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query_range?query=sum((node_memory_MemAvailable_bytes%20%2F%20node_memory_MemTotal_bytes)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D%20*%20100)%20%2F%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)&start=1544788080&end=1544789010&step=30', timeout=5)
+    results = response.json()
+    memData = results['data']['result']
+    result = 0
+    prediction = 0
+    anomalyScore = 0
+    anomalyLikelihood = 0 
+    utility_mem = 0 
+    mem  = 0
+    if len(memData) > 0:
+        #print(memData)
+        memValue = memData[0]['values']
+        #print(memValue)
+        timestamp = datetime.datetime.fromtimestamp(float(memValue[0][0])).strftime('%m/%d/%y %H:%M')
+        mem = 100 - float(memValue[0][1])
+        #print 'time: ', timestamp, ' mem Usage: ',mem 
+        result = model_mem_model.run({"mem": mem})
+        prediction = result.inferences["multiStepBestPredictions"][1]
+        anomalyScore = result.inferences['anomalyScore']
+        anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(mem, anomalyScore, timestamp)
+        utility_mem = np.dot(anomalyLikelihood, mem)
+        data = {
+        'mem'  : float(mem),
+        'prediction' : float(prediction), 
+        'anomalyScore': float(anomalyScore), 
+        'anomalyLikelihood':float(anomalyLikelihood), 
+        'utility_mem':float(utility_mem)
+            }
+        js = json.dumps(data)
+
+       
+    resp = Response(js, status=200, mimetype='application/json')
+    resp.headers['Link'] = 'http://nupicapi.8888'
+    return resp
+    
+    return np.array(mem_axis) 
+@app.route('/disk')
+def get_disk_observation():
+    model_disk_model = ModelFactory.create(model_disk.MODEL_PARAMS)
+    model_disk_model.enableInference({"predictedField": "disk"})
+    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum((node_filesystem_free%7Bmountpoint%3D%22%2F%22%7D%20%2F%20node_filesystem_size%7Bmountpoint%3D%22%2F%22%7D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D%20*%20100)%20%2F%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)&start=1538181830&end=1538182730&step=30', timeout=5)
+    results = response.json()
+    diskData = results['data']['result']
+    result = 0
+    prediction = 0
+    anomalyScore = 0
+    anomalyLikelihood = 0 
+    utility_disk = 0 
+    disk  = 0
+    js= None
+    if len(diskData) > 0:
+        diskValue = diskData[0]['value']
+        timestamp = datetime.datetime.fromtimestamp(float(diskValue[0])).strftime('%m/%d/%y %H:%M')
+        disk = 100 - float(diskValue[1])
+        #print 'time: ', timestamp,' disk Usage: ',disk 
+        result = model_disk_model.run({"disk": disk})
+        prediction = result.inferences["multiStepBestPredictions"][1]
+        anomalyScore = result.inferences['anomalyScore']
+        anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(disk, anomalyScore, timestamp)
+        utility_disk = np.dot(anomalyLikelihood, disk)
+        data = {
+        'disk'  : float(disk),
+        'prediction' : float(prediction), 
+        'anomalyScore': float(anomalyScore), 
+        'anomalyLikelihood':float(anomalyLikelihood), 
+        'utility_mem':float(utility_disk)
+            }
+        js = json.dumps(data)
+    else: 
+        data = {
+        'disk'  : float(0.0),
+        'prediction' : float(0), 
+        'anomalyScore': float(0), 
+        'anomalyLikelihood':float(0), 
+        'utility_disk':float(0)
+            }
+        js = json.dumps(data)
+
+       
+    resp = Response(js, status=200, mimetype='application/json')
+    resp.headers['Link'] = 'http://nupicapi.8888'
+
+    return resp
+@app.route('/net')
+def get_net_observation():
+    model_net = ModelFactory.create(net_params.MODEL_PARAMS)
+    model_net.enableInference({"predictedField": "bytes_sent"})
+    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum(rate(container_network_receive_bytes_total%7Bcontainer_label_com_docker_swarm_node_id%3D~".%2B"%7D%5B30s%5D))%20by%20(container_label_com_docker_swarm_service_name)&start=1540150261&end=1540151161&step=30', timeout=5)
+    results = response.json()
+    diskData = results['data']['result']
+    result = 0
+    prediction = 0
+    anomalyScore = 0
+    anomalyLikelihood = 0 
+    utility_net = 0 
+    net  = 0
+    if len(diskData) > 0:
+        diskValue = diskData[0]['value']
+        timestamp = datetime.datetime.fromtimestamp(float(diskValue[0])).strftime('%m/%d/%y %H:%M')
+        net = float(diskValue[1])
+        #print 'time: ', timestamp,' net bytes_sent: ',net 
+        result = model_net.run({"bytes_sent": net})
+        prediction = result.inferences["multiStepBestPredictions"][1]
+        anomalyScore = result.inferences['anomalyScore']
+        anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(net, anomalyScore, timestamp)
+        utility_net = np.dot(anomalyLikelihood, net)
+        data = {
+        'net'  : float(net),
+        'prediction' : float(prediction), 
+        'anomalyScore': float(anomalyScore), 
+        'anomalyLikelihood':float(anomalyLikelihood), 
+        'utility_net':float(utility_net)
+            }
+        js = json.dumps(data)
+    else: 
+        data = {
+        'disk'  : float(0.0),
+        'prediction' : float(0), 
+        'anomalyScore': float(0), 
+        'anomalyLikelihood':float(0), 
+        'utility_disk':float(0)
+            }
+        js = json.dumps(data)
+
+       
+    resp = Response(js, status=200, mimetype='application/json')
+    resp.headers['Link'] = 'http://nupicapi.8888'
+    return resp
+
+@app.route('/')
+def hi():
+	msg= "<h1> Hi Welcome to Adaptation Manager" + prometheus
+	return msg 
+@app.route('/cpu')
+def get_cpu_observation():
+    model_cpu_model = ModelFactory.create(model_cpu.MODEL_PARAMS)
+    model_cpu_model.enableInference({"predictedField": "cpu"})
+    #response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum(irate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B30s%5D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20*%20100%20%2F%20count(node_cpu%7Bmode%3D%22user%22%7D%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20&start=1544788200&end=1544788260&step=30', timeout=5)
+    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query_range?query=sum(irate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B30s%5D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20*%20100%20%2F%20count(node_cpu_seconds_total%7Bmode%3D%22user%22%7D%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20&start=1544788200&end=1544788260&step=30', timeout=5)
+
+    results = response.json()
+    cpuData = results['data']['result']
+    result = 0
+    prediction = 0
+    anomalyScore = 0
+    anomalyLikelihood = 0 
+    utility_cpu = 0 
+    cpu  = 0    
+    if len(cpuData) > 0:
+        
+        cpuValue = cpuData[0]['values']
+        #print (cpuValue[0][0])
+        timestamp = datetime.datetime.fromtimestamp(float(cpuValue[0][0])).strftime('%m/%d/%y %H:%M') 
+        cpu = 100 - float(cpuValue[0][1])
+       
+        result = model_cpu_model.run({"cpu": cpu})
+        prediction = result.inferences["multiStepBestPredictions"][1]
+        anomalyScore = result.inferences['anomalyScore']
+        anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(cpu, anomalyScore, timestamp)
+        utility_cpu = np.dot(anomalyLikelihood, cpu)
+        #print 'time: ', timestamp, ' cpu Usage: ',cpu , 'utility_cpu: ', utility_cpu
+        #cpu_axis=[cpu, prediction, anomalyScore, anomalyLikelihood, utility_cpu]
+        data = {
+        'cpu'  : float(cpu),
+        'prediction' : float(prediction), 
+        'anomalyScore': float(anomalyScore), 
+        'anomalyLikelihood':float(anomalyLikelihood), 
+        'utility_cpu':float(utility_cpu)
+            }
+        js = json.dumps(data)
+    
+    resp = Response(js, status=200, mimetype='application/json')
+    resp.headers['Link'] = 'http://nupicapi.8888'
+    return resp
+
+@app.route('/data')
+def get_observation():
+    obs = None 
+    disk_axis = get_disk_observation()
+    mem_axis  = get_mem_observation()
+    cpu_axis  = get_cpu_observation()
+    net_axis  = get_net_observation()
+    data = {
+        'cpu'  : disk_axis,
+        'mem' : mem_axis, 
+        'net': net_axis 
+         }
+    print (data)
+    js = json.dumps(data)
+    resp = Response(js, status=200, mimetype='application/json')
+    resp.headers['Link'] = 'http://nupicapi.8888'
+    return data
+      
+     
+    
+    return str(response)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port='8888', debug=True)

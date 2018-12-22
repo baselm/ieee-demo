@@ -17,7 +17,17 @@
     errors stderr
     tls off
 }
- 
+
+:9094 {
+    basicauth / {$ADMIN_USER} {$ADMIN_PASSWORD}
+    proxy / unsee:9094 {
+            transparent
+        }
+
+    errors stderr
+    tls off
+}
+
 :3000 {
     proxy / grafana:3000 {
             transparent
@@ -40,26 +50,6 @@
 
 :8888 {
     proxy / nupicapi:8888 {
-            transparent
-            websocket
-        }
-
-    errors stderr
-    tls off
-}
-
-:9000 {
-    proxy / portainer:9000 {
-            transparent
-            websocket
-        }
-
-    errors stderr
-    tls off
-}
-
-:9001 {
-    proxy / agent:9001 {
             transparent
             websocket
         }

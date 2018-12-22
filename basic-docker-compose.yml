@@ -9,6 +9,7 @@ volumes:
     prometheus: {}
     grafana: {}
     alertmanager: {}
+    docker: {}
 
 configs:
   caddy_config:
@@ -111,18 +112,38 @@ services:
         reservations:
           memory: 64M
 
-  nupicapi:
-    image: baselm/nupic-api:latest
+  swarmapi:
+    image: baselm/swarmapi:1.0
+    restart: always
     networks:
         - net
     volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
+        - docker:/model-trainer
     environment:
        NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
        NTA_CONF_PROP_nupic_cluster_database_host: db 
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 3
+      placement:
+        constraints:
+          - node.role == manager
+
+  nupicapi:
+    image: baselm/nupicapi:747
+    restart: always
+    networks:
+        - net
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - docker:/model-trainer
+    environment:
+       NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
+       NTA_CONF_PROP_nupic_cluster_database_host: db 
+    deploy:
+      mode: replicated
+      replicas: 3
       placement:
         constraints:
           - node.role == manager
@@ -132,6 +153,16 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: nupic
+
+  unsee:
+    image: cloudflare/unsee 
+    networks:
+      - net
+    environment:
+      - "ALERTMANAGER_URIS=default:http://alertmanager:9093"
+    deploy:
+      mode: replicated
+      replicas: 1
 
   node-exporter:
     image: stefanprodan/swarmprom-node-exporter:v0.15.2

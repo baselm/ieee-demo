@@ -148,9 +148,5 @@ def run_cpu_experiment():
     print 'utilityOfCpu: ', utilityOfCpu
 
   move_model()
-
-
-
-
 if __name__ == "__main__":
   run_cpu_experiment()

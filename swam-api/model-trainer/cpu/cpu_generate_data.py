@@ -53,7 +53,7 @@ def run(filename="cpu.csv"):
                 timestamp = datetime.datetime.fromtimestamp(float(cpuValue[0][0])).strftime('%m/%d/%y %H:%M') 
                 cpu = 100 - float(cpuValue[0][1])
                 writer.writerow([timestamp, cpu])
-              time.sleep(1)
+              ##time.sleep(1)
                
   fileHandle.close()
 

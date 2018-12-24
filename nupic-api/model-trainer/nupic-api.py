@@ -33,31 +33,15 @@ sys.path.append('disk')
 import disk_experiment
 from flask import Flask, request, abort
 
+
 finalUtilityCpu =0.0
 finalutilityDisk =0.0
 finalutilityOfmem =0.0
 maxU={'metric':'','value':0.0, 'swarmed':False, 'adapted': False, 'msg':''}
 result_adapt={}
 
-app = Flask(__name__)
 swarmed=maxU['swarmed']
 adapted=maxU['adapted']
-
-anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
-DATE_FORMAT = "%m/%d/%y %H:%M"
-finalUtilityCpu=0.0 
-SECONDS_PER_STEP= 15
-adaptresult = {'metric': ' ', 'value':0, 'cost':0}
-adaptoutcome = {'metric': ' ', 'value':0, 'cost':0, 'msg':''}
-results=0
-resultsA= []
-prometheus='192.168.99.100'
-app = Flask(__name__)
-aresult = {'metric': ' ', 'value':0, 'prediction':0, 'anomalyScore':0,'anomalyLikelihood':0}
-tend = time.time()
-tstart = tend - 30 
-end = str(tend)
-start = str(tstart)
 def runInParallel(*fns):
   proc = []
   for fn in fns:
@@ -94,8 +78,21 @@ def run_swarm():
 
 def callback():
     return "swarm finished in subprocess "
-@app.route('/swarm')
-def hi():
+
+anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
+DATE_FORMAT = "%m/%d/%y %H:%M"
+finalUtilityCpu=0.0 
+SECONDS_PER_STEP= 15
+adaptresult = {'metric': ' ', 'value':0, 'cost':0}
+adaptoutcome = {'metric': ' ', 'value':0, 'cost':0, 'msg':''}
+results=0
+resultsA= []
+prometheus='192.168.99.100'
+app = Flask(__name__)
+aresult = {'metric': ' ', 'value':0, 'prediction':0, 'anomalyScore':0,'anomalyLikelihood':0}
+ 
+@app.route('/start')
+def startSwarm():
     swarmed=maxU['swarmed']
     print 'swarmed', swarmed
     if swarmed==False:
@@ -124,10 +121,11 @@ def webhook():
     else:
         abort(400)
 
-
-
 @app.route('/mem')
 def get_mem_observation():
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
     model_mem_model = ModelFactory.create(model_mem.MODEL_PARAMS)
     model_mem_model.enableInference({"predictedField": "mem"})
     response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query_range?query=sum((node_memory_MemAvailable_bytes%20%2F%20node_memory_MemTotal_bytes)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D%20*%20100)%20%2F%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)&start='+start+'&end='+ end +'&step=30', timeout=5)
@@ -151,7 +149,8 @@ def get_mem_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(mem, anomalyScore, timestamp)
-        utility_mem = np.dot(anomalyLikelihood, mem)
+         
+        utility_mem =  anomalyLikelihood * (prediction - mem )
         data = {
         'mem'  : float(mem),
         'prediction' : float(prediction), 
@@ -178,9 +177,12 @@ def get_mem_observation():
     return np.array(mem_axis) 
 @app.route('/disk')
 def get_disk_observation():
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
     model_disk_model = ModelFactory.create(model_disk.MODEL_PARAMS)
     model_disk_model.enableInference({"predictedField": "disk"})
-    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum((node_filesystem_free%7Bmountpoint%3D%22%2F%22%7D%20%2F%20node_filesystem_size%7Bmountpoint%3D%22%2F%22%7D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D%20*%20100)%20%2F%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)&start='+start+'& end=' + end +'&step=30', timeout=5)
+    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum((node_disk_io_time_weighted_seconds_total))%20%2F%20avg(node_disk_io_time_weighted_seconds_total)%20*%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~".%2B"%7D)&start='+start+'& end=' + end +'&step=30', timeout=5)
     results = response.json()
     diskData = results['data']['result']
     result = 0
@@ -199,13 +201,14 @@ def get_disk_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(disk, anomalyScore, timestamp)
-        utility_disk = np.dot(anomalyLikelihood, disk)
+
+        utility_disk = anomalyLikelihood * (prediction - disk )  
         data = {
         'disk'  : float(disk),
         'prediction' : float(prediction), 
         'anomalyScore': float(anomalyScore), 
         'anomalyLikelihood':float(anomalyLikelihood), 
-        'utility_mem':float(utility_disk)
+        'utility_disk':float(utility_disk)
             }
         js = json.dumps(data)
     else: 
@@ -225,6 +228,9 @@ def get_disk_observation():
     return resp
 @app.route('/net')
 def get_net_observation():
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
     model_net = ModelFactory.create(net_params.MODEL_PARAMS)
     model_net.enableInference({"predictedField": "bytes_sent"})
     response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum(rate(container_network_receive_bytes_total%7Bcontainer_label_com_docker_swarm_node_id%3D~".%2B"%7D%5B30s%5D))%20by%20(container_label_com_docker_swarm_service_name)&start='+start+'& end='+ end + '&step=30', timeout=5)
@@ -246,7 +252,7 @@ def get_net_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(net, anomalyScore, timestamp)
-        utility_net = np.dot(anomalyLikelihood, net)
+        utility_net = anomalyLikelihood * (prediction - net )  
         data = {
         'net'  : float(net),
         'prediction' : float(prediction), 
@@ -257,25 +263,31 @@ def get_net_observation():
         js = json.dumps(data)
     else: 
         data = {
-        'disk'  : float(0.0),
+        'net'  : float(0),
         'prediction' : float(0), 
         'anomalyScore': float(0), 
         'anomalyLikelihood':float(0), 
-        'utility_disk':float(0)
+        'utility_net':float(0)
             }
         js = json.dumps(data)
 
        
     resp = Response(js, status=200, mimetype='application/json')
-    resp.headers['Link'] = 'http://nupicapi.8888'
+    resp.headers['Link'] = 'http://nupicapi.8888/net'
     return resp
 
 @app.route('/')
 def hi():
-    msg= "<h1> Hi Welcome to Adaptation Manager IP: " + prometheus + " time: " + str(end) 
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
+    msg= "<h1> Hi Welcome to Adaptation Manager IP: " + prometheus  +  " start time: " + str(start)  +  " end time: " + str(end) 
     return msg 
 @app.route('/cpu')
 def get_cpu_observation():
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
     model_cpu_model = ModelFactory.create(model_cpu.MODEL_PARAMS)
     model_cpu_model.enableInference({"predictedField": "cpu"})
     #response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query?query=sum(irate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B30s%5D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20*%20100%20%2F%20count(node_cpu%7Bmode%3D%22user%22%7D%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20&start=1544788200&end=1544788260&step=30', timeout=5)
@@ -301,7 +313,7 @@ def get_cpu_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(cpu, anomalyScore, timestamp)
-        utility_cpu = np.dot(anomalyLikelihood, cpu)
+        utility_cpu = anomalyLikelihood * (prediction - cpu )
         #print 'time: ', timestamp, ' cpu Usage: ',cpu , 'utility_cpu: ', utility_cpu
         #cpu_axis=[cpu, prediction, anomalyScore, anomalyLikelihood, utility_cpu]
         data = {
@@ -328,6 +340,9 @@ def get_cpu_observation():
 
 @app.route('/data')
 def get_observation():
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
     obs = None 
     disk_axis = get_disk_observation()
     mem_axis  = get_mem_observation()
@@ -349,5 +364,7 @@ def get_observation():
     return str(response)
 
 if __name__ == '__main__':
-    print (end, 'end') 
-    app.run(host='0.0.0.0', port='8881', debug=True)
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
+    app.run(host='0.0.0.0', port='8888', debug=True)

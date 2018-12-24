@@ -29,8 +29,8 @@ def runInParallel(*fns):
 
 def run_swarm():
 	if maxU['swarmed'] == False:
-		#disk_experiment.run_disk_experiment()
-		#cpu_experiment.run_cpu_experiment()
+		disk_experiment.run_disk_experiment()
+		cpu_experiment.run_cpu_experiment()
 		mem_experiment.run_mem_experiment()
 		#runInParallel(disk_experiment.run_disk_experiment(), cpu_experiment.run_cpu_experiment(), mem_experiment.run_mem_experiment())
 		print "swarm finished "

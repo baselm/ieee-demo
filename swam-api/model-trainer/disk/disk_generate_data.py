@@ -58,7 +58,7 @@ def run(filename="desk.csv"):
       timestamp = datetime.datetime.fromtimestamp(float(diskValue[0])).strftime('%m/%d/%y %H:%M')
       disk = 100 - float(diskValue[0])
       writer1.writerow([timestamp, disk])
-    time.sleep(1)
+    #time.sleep(1)
                
   fileHandle1.close()
   print "Generated %i rows of output data into %s" % (ROWS, filename)

@@ -35,7 +35,7 @@ from nupic.frameworks.opf.exp_description_helpers import importBaseDescription
 # the sub-experiment configuration
 config ={
   'aggregationInfo' : {'seconds': 0, 'fields': [], 'months': 0, 'days': 0, 'years': 0, 'hours': 0, 'microseconds': 0, 'weeks': 0, 'minutes': 0, 'milliseconds': 0},
-  'modelParams' : {'tmParams': {'minThreshold': 11, 'activationThreshold': 14, 'pamLength': 3}, 'sensorParams': {'encoders': {u'cpu': {'maxval': 100.0, 'name': 'cpu', 'clipInput': True, 'minval': 0.0, 'n': 296, 'fieldname': 'cpu', 'w': 21, 'type': 'ScalarEncoder'}}}, 'spParams': {'synPermInactiveDec': 0.055135}, 'clParams': {'alpha': 0.055045000000000004}},
+  'modelParams' : {'tmParams': {'minThreshold': 9, 'activationThreshold': 12, 'pamLength': 1}, 'sensorParams': {'encoders': {u'cpu': {'maxval': 100.0, 'name': 'cpu', 'clipInput': True, 'minval': 0.0, 'n': 47, 'fieldname': 'cpu', 'w': 21, 'type': 'ScalarEncoder'}}}, 'spParams': {'synPermInactiveDec': 0.1}, 'clParams': {'alpha': 0.0001}},
 
 }
 

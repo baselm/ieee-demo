@@ -91,7 +91,7 @@ def run_mem_experiment():
   cur_dir = os.getcwd()
   input_file = source = os.path.join(cur_dir,'mem/mem.csv')
   print input_file
-  mem_generate_data.run(input_file)
+  #mem_generate_data.run(input_file)
   print 'input_file', input_file
   model_params = swarm_over_data()
   model = ModelFactory.create(model_params)

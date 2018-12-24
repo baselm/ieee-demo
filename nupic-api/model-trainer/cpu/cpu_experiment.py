@@ -84,7 +84,7 @@ def swarm_over_data(SWARM_CONFIG):
   cur_dir = os.getcwd()
   dis = os.path.join(cur_dir,'cpu')
   outdir =  os.path.join(cur_dir,'cpu/cpu_model_store')
-  return permutations_runner.runWithConfig(SWARM_CONFIG,{'maxWorkers': 2, 'overwrite': True }, outDir= outdir, permWorkDir=dis)
+  return permutations_runner.runWithConfig(SWARM_CONFIG,{'maxWorkers': 8, 'overwrite': True }, outDir= outdir, permWorkDir=dis)
   
 
 
@@ -96,12 +96,6 @@ def run_cpu_experiment():
   model_params = swarm_over_data(SWARM_CONFIG)
   model = ModelFactory.create(model_params)
   model.enableInference({"predictedField": "cpu"})
-  #To load with no swarming 
-  #model = ModelFactory.create(model_params)
-
-
-  
-
   if PLOT:
     output = NuPICPlotOutput("cpu/final_cpu_output")
   else:
@@ -109,12 +103,10 @@ def run_cpu_experiment():
 
   with open(input_file, "rb") as cpu_input:
     csv_reader = csv.reader(cpu_input)
-
     # skip header rows
     csv_reader.next()
     csv_reader.next()
     csv_reader.next()
-
     # the real data
     sumOfUtilityFitness=0.0
     sumOfWeaight = 0.0 

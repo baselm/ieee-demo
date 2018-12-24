@@ -28,8 +28,9 @@ import psutil
 import datetime
 import time
 import requests
-ROWS = 1000
+ROWS = 2500
 DATE_FORMAT = "%m/%d/%y %H:%M"
+prometheus='192.168.99.100'
 def run(filename="cpu.csv"):
   print "Generating sine data into %s" % filename
   fileHandle = open(filename,"w")
@@ -37,18 +38,22 @@ def run(filename="cpu.csv"):
   writer.writerow(["timestamp","cpu"])
   writer.writerow(["datetime","float"])
   writer.writerow(["",""])
-
+  cpuValue=0
   for i in range(ROWS):
-              response = requests.get('http://admin:admin@prometheus:9090/api/v1/query?query=sum(irate(node_cpu%7Bmode%3D%22idle%22%7D%5B30s%5D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20*%20100%20%2F%20count(node_cpu%7Bmode%3D%22user%22%7D%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20&start=1538182792&end=1538182852&step=30', timeout=5)
+              tstart = time.time()
+              end = str(tstart+30)
+              start = str(tstart)
+              response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query_range?query=sum(irate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B30s%5D)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20*%20100%20%2F%20count(node_cpu_seconds_total%7Bmode%3D%22user%22%7D%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)%20&start='+start+'&end='+ end + '&step=30', timeout=5)
               results = response.json()
-              cpuData = results['data']['result'] 
+              cpuData = results['data']['result']
+              #cpuData = results['data']['result']
               if len(cpuData) > 0:
-                cpuValue = cpuData[0]['value']
-                print 'cpuValue: ',cpuData[0]['value']
-                timestamp = datetime.datetime.fromtimestamp(float(cpuValue[0])).strftime('%m/%d/%y %H:%M')
-                cpu_value = 100 - float(cpuValue[1])
-                writer.writerow([timestamp, cpu_value])
-              time.sleep(5)
+                cpuValue = cpuData[0]['values']
+                #print (cpuValue[0][0])
+                timestamp = datetime.datetime.fromtimestamp(float(cpuValue[0][0])).strftime('%m/%d/%y %H:%M') 
+                cpu = 100 - float(cpuValue[0][1])
+                writer.writerow([timestamp, cpu])
+              time.sleep(1)
                
   fileHandle.close()
 

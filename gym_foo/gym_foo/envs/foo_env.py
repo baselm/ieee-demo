@@ -200,7 +200,7 @@ class FooEnv(gym.Env):
             self.viewer.close()
             self.viewer = None
     def get_observation(self):
-        self.disk_axis =  self.get_cpu_observation() 
+        self.disk_axis = self.get_disk_observation() 
         self.mem_axis = self.get_mem_observation()
         self.cpu_axis = self.get_cpu_observation()
         self.net_axis = self.get_net_observation()
@@ -239,8 +239,7 @@ class FooEnv(gym.Env):
             anomalyScore = results['anomalyScore']
             anomalyLikelihood = results['anomalyLikelihood']
             utility_net = results['utility_net']
-
-        net_axis=[net, prediction, anomalyScore, anomalyLikelihood, utility_net]
+            net_axis=[net, prediction, anomalyScore, anomalyLikelihood, utility_net]
         return np.array(net_axis) 
     def get_disk_observation(self):
         response = requests.get('http://192.168.99.100:8888/disk', timeout=5)
@@ -252,8 +251,8 @@ class FooEnv(gym.Env):
                 anomalyScore = results['anomalyScore']
                 anomalyLikelihood = results['anomalyLikelihood']
                 utility_disk = results['utility_disk']
-                #disk_axis=[disk, prediction, anomalyScore, anomalyLikelihood, utility_disk]
-                disk_axis=[0, 0, 0, 0, 0]
+                disk_axis=[disk, prediction, anomalyScore, anomalyLikelihood, utility_disk]
+                 
         return np.array(disk_axis) 
   
     def get_current_state(self):

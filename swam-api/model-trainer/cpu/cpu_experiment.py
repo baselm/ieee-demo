@@ -92,7 +92,7 @@ def run_cpu_experiment():
   input_file = "cpu.csv"
   cur_dir = os.getcwd()
   input_file = os.path.join(cur_dir,'cpu/cpu.csv')
-  cpu_generate_data.run(input_file)
+  #cpu_generate_data.run(input_file)
   model_params = swarm_over_data(SWARM_CONFIG)
   model = ModelFactory.create(model_params)
   model.enableInference({"predictedField": "cpu"})

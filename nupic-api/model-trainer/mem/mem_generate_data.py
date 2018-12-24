@@ -28,9 +28,10 @@ import psutil
 import datetime
 import time
 import requests
-ROWS = 1500
+ROWS = 2500
 SECONDS_PER_STEP= 1
 DATE_FORMAT = "%m/%d/%y %H:%M"
+prometheus='192.168.99.100'
 def run(filename="mem.csv"):
   print "Generating sine data into %s" % filename
   fileHandle1 = open(filename,"w")
@@ -39,17 +40,20 @@ def run(filename="mem.csv"):
   writer1.writerow(["datetime","float"])
   writer1.writerow(["",""])
   for i in range(ROWS):
-    response1 = requests.get('http://admin:admin@prometheus:9090/api/v1/query?query=sum((node_memory_MemAvailable%20%2F%20node_memory_MemTotal)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D%20*%20100)%20%2F%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)&start=1538181656&end=1538182556&step=30', timeout=5)
-    diskResult = response1.json()
-    diskData = diskResult['data']['result']
-    if len(diskData) > 0:
-      print 'mem: ', diskData[0]['value']
-      diskValue = diskData[0]['value']
-      timestamp = datetime.datetime.fromtimestamp(float(diskValue[0])).strftime('%m/%d/%y %H:%M')
-      disk = 100 - float(diskValue[1])
-      writer1.writerow([timestamp, disk])
-    time.sleep(5)
-               
+    tstart = time.time()
+    end = str(tstart+30)
+    start = str(tstart)
+    response = requests.get('http://admin:admin@'+prometheus+':9090/api/v1/query_range?query=sum((node_memory_MemAvailable_bytes%20%2F%20node_memory_MemTotal_bytes)%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D%20*%20100)%20%2F%20count(node_meta%20*%20on(instance)%20group_left(node_name)%20node_meta%7Bnode_id%3D~%22.%2B%22%7D)&start='+start+'&end='+ end +'&step=30', timeout=5)
+    results = response.json()
+    cpuData = results['data']['result']
+    #cpuData = results['data']['result']
+    if len(cpuData) > 0:
+      cpuValue = cpuData[0]['values']
+      print (cpuValue[0][0])
+      timestamp = datetime.datetime.fromtimestamp(float(cpuValue[0][0])).strftime('%m/%d/%y %H:%M') 
+      cpu = 100 - float(cpuValue[0][1])
+      writer1.writerow([timestamp, cpu])
+      time.sleep(1)
   fileHandle1.close()
   print "Generated %i rows of output data into %s" % (ROWS, filename)
 

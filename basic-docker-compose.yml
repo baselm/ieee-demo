@@ -111,59 +111,18 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-
-  swarmapi:
-    image: baselm/swarmapi:1.0
-    restart: always
-    networks:
-        - net
-    volumes:
-        - "/var/run/docker.sock:/var/run/docker.sock"
-        - docker:/model-trainer
-    environment:
-       NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
-       NTA_CONF_PROP_nupic_cluster_database_host: db 
-    deploy:
-      mode: replicated
-      replicas: 3
-      placement:
-        constraints:
-          - node.role == manager
-
+  
   nupicapi:
-    image: baselm/nupicapi:747
+    image: baselm/nupic:A382
     restart: always
     networks:
         - net
     volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
         - docker:/model-trainer
-    environment:
-       NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
-       NTA_CONF_PROP_nupic_cluster_database_host: db 
     deploy:
-      mode: replicated
-      replicas: 3
-      placement:
-        constraints:
-          - node.role == manager
-  db:
-    image: mysql
-    command: --default-authentication-plugin=mysql_native_password
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: nupic
-
-  unsee:
-    image: cloudflare/unsee 
-    networks:
-      - net
-    environment:
-      - "ALERTMANAGER_URIS=default:http://alertmanager:9093"
-    deploy:
-      mode: replicated
-      replicas: 1
-
+      mode: global
+       
   node-exporter:
     image: stefanprodan/swarmprom-node-exporter:v0.15.2
     networks:
@@ -229,6 +188,7 @@ services:
       - "9093:9093"
       - "9094:9094"
       - "8888:8888"
+   
     networks:
       - net
     environment:

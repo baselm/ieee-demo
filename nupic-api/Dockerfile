@@ -16,13 +16,11 @@ COPY requirements.txt /tmp/
 RUN pip install --requirement /tmp/requirements.txt
  
 
-COPY /model-trainer /model-trainer
+COPY /model-api /model-api
 ENV TERM xterm
-ENV NTA_CONF_PROP_nupic_cluster_database_passwd nupic
-ENV NTA_CONF_PROP_nupic_cluster_database_host db
-COPY nupic-default.xml /usr/local/src/nupic/src/nupic/support/nupic-default.xml
-
-WORKDIR /model-trainer
+ 
+ 
+WORKDIR /model-api
 CMD python nupic-api.py
 
 

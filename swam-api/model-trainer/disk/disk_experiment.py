@@ -86,7 +86,7 @@ def swarm_over_data():
 
 def run_disk_experiment():
   input_file = "disk/disk.csv"
-  disk_generate_data.run(input_file)
+  #disk_generate_data.run(input_file)
   disk_params = swarm_over_data()
   model_disk = ModelFactory.create(disk_params)
   model_disk.enableInference({"predictedField": "disk"})

@@ -149,7 +149,8 @@ def get_mem_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(mem, anomalyScore, timestamp)
-        utility_mem = np.dot(anomalyLikelihood, mem)
+         
+        utility_mem =  anomalyLikelihood * mem 
         data = {
         'mem'  : float(mem),
         'prediction' : float(prediction), 
@@ -164,7 +165,7 @@ def get_mem_observation():
         'prediction' : float(0), 
         'anomalyScore': float(0), 
         'anomalyLikelihood':float(0), 
-        'utility_cpu':float(0)
+        'utility_mem':float(0)
             }
         js = json.dumps(data)
 
@@ -200,13 +201,14 @@ def get_disk_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(disk, anomalyScore, timestamp)
-        utility_disk = np.dot(anomalyLikelihood, disk)
+
+        utility_disk = anomalyLikelihood * disk  
         data = {
         'disk'  : float(disk),
         'prediction' : float(prediction), 
         'anomalyScore': float(anomalyScore), 
         'anomalyLikelihood':float(anomalyLikelihood), 
-        'utility_mem':float(utility_disk)
+        'utility_disk':float(utility_disk)
             }
         js = json.dumps(data)
     else: 
@@ -250,7 +252,7 @@ def get_net_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(net, anomalyScore, timestamp)
-        utility_net = np.dot(anomalyLikelihood, net)
+        utility_net = anomalyLikelihood * net   
         data = {
         'net'  : float(net),
         'prediction' : float(prediction), 
@@ -261,17 +263,17 @@ def get_net_observation():
         js = json.dumps(data)
     else: 
         data = {
-        'disk'  : float(0.0),
+        'net'  : float(0),
         'prediction' : float(0), 
         'anomalyScore': float(0), 
         'anomalyLikelihood':float(0), 
-        'utility_disk':float(0)
+        'utility_net':float(0)
             }
         js = json.dumps(data)
 
        
     resp = Response(js, status=200, mimetype='application/json')
-    resp.headers['Link'] = 'http://nupicapi.8888'
+    resp.headers['Link'] = 'http://nupicapi.8888/net'
     return resp
 
 @app.route('/')
@@ -311,7 +313,7 @@ def get_cpu_observation():
         prediction = result.inferences["multiStepBestPredictions"][1]
         anomalyScore = result.inferences['anomalyScore']
         anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(cpu, anomalyScore, timestamp)
-        utility_cpu = np.dot(anomalyLikelihood, cpu)
+        utility_cpu = anomalyLikelihood * cpu 
         #print 'time: ', timestamp, ' cpu Usage: ',cpu , 'utility_cpu: ', utility_cpu
         #cpu_axis=[cpu, prediction, anomalyScore, anomalyLikelihood, utility_cpu]
         data = {
@@ -324,7 +326,7 @@ def get_cpu_observation():
         js = json.dumps(data)
     else: 
         data = {
-        'cpu'  : float(0.0),
+        'cpu'  : float(0),
         'prediction' : float(0), 
         'anomalyScore': float(0), 
         'anomalyLikelihood':float(0), 

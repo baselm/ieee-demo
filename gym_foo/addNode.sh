@@ -1,4 +1,5 @@
 #!/bin/bash
+
 RIGHT_NOW=$(date +"%F"-"%h%M%S")
 echo $RIGHT_NOW
 docker-machine create -d virtualbox \

@@ -18,15 +18,11 @@ and [Unsee](https://github.com/cloudflare/unsee).
 Clone this repository and run the monitoring stack:
 
 ```bash
-$ git clone https://github.com/stefanprodan/swarmprom.git
-$ cd swarmprom
-
+$ git clone https://github.com/baselm/ieee-demo.git
+$ cd ieee-demo
 ADMIN_USER=admin \
 ADMIN_PASSWORD=admin \
-SLACK_URL=https://hooks.slack.com/services/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 \
-SLACK_CHANNEL=devops-alerts \
-SLACK_USER=alertmanager \
-docker stack deploy -c basic-docker-compose.yml mon
+docker stack deploy -c basic-docker-compose.yml mon3
 ```
 '''
 ADMIN_USER=admin \

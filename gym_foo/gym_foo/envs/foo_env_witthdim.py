@@ -21,7 +21,7 @@ class FooEnv(gym.Env):
         self.mem_axis = self.get_mem_observation()
         self.disk_axis = self.get_disk_observation()
         self.net_axis  = self.get_net_observation()
-        self.action_space = spaces.Discrete(6)
+        self.action_space = spaces.Discrete(9)
         high = np.array([
             self.get_cpu_observation(),
             self.get_mem_observation(),
@@ -73,151 +73,159 @@ class FooEnv(gym.Env):
         print('self.adapte_cpu: ', self.adapte_cpu, 'self.adapte_mem:', self.adapte_mem, 'self.adapte_disk:',self.adapte_disk,'self.adapte_net:', self.adapte_net )
         done=False
         reward=0
-        if self.adapte_cpu:
-            if action == 0:
-                print("Scale Down Move to State S1")
-                #Reward = max of utility fitness
+        #Here 
+     
+        if action == 0:
+            print("Scale Down Move to State S1")
+            #Reward = max of utility fitness
 
-                response = requests.get(' http://192.168.99.100:5000/services/vscale/web/'+ str(self.attempt) + '/' + str(self.cpu_axis[0])+'/'+str(self.cpu_axis[3]))
-                results = response.json()
-                if results['result']=='Service converged':
-                    done=True       
-                    print(results)
-                else:
-                    done= False
+            response = requests.get(' http://192.168.99.100:5000/services/vscale/web/'+ str(self.attempt) + '/' + str(self.cpu_axis[0])+'/'+str(self.cpu_axis[3]))
+            results = response.json()
+            if results['result']=='Service converged':
+                done=True       
+                print(results)
+            else:
+                done= False
+            self.obs = self.get_observation()
+            reward= 1 - np.amax(self.obs[:,3])  
+            print(reward)
+            info = "Scale Down Move to State S5"
+        elif action == 1:
+            print("Stay in State S0")
+            self.obs = self.get_observation()
+            reward= 1 - np.amax(self.obs[:,3])  
+            if (self.attempt>10):
+                done = True
+                reward= 1
+            else:
+                done= False 
+            info = "Stay in State S0"
+            print("reward: ",reward, np.amax(self.obs[:,4]))
+        elif action == 2: 
+            print("Scale Service UP S2")
+
+            response = requests.get(' http://192.168.99.100:5000/services/vscale/web/'+ str(self.attempt) + '/' + str(self.cpu_axis[0])+'/'+str(self.cpu_axis[3]))
+            results = response.json()
+            if results['result']=='Service converged':
+                done=True 
+                self.obs = self.get_observation()
+                reward= 1 - np.amax(self.obs[:,3])  
+            else:
+                done= False
+                print(results)
+
                 self.obs = self.get_observation()
                 reward= 1 - np.amax(self.obs[:,3])  
                 print(reward)
-                info = "Scale Down Move to State S5"
-            elif action == 1:
-                print("Stay in State S0")
-                self.obs = self.get_observation()
-                reward= 1 - np.amax(self.obs[:,3])  
-                if (self.attempt>10):
-                    done = True
-                    reward= 1
-                else:
-                    done= False 
-                info = "Stay in State S0"
-                print("reward: ",reward, np.amax(self.obs[:,4]))
-            elif action == 2: 
-                print("Scale Service UP S2")
 
-                response = requests.get(' http://192.168.99.100:5000/services/vscale/web/'+ str(self.attempt) + '/' + str(self.cpu_axis[0])+'/'+str(self.cpu_axis[3]))
-                results = response.json()
-                if results['result']=='Service converged':
-                    done=True 
-                    self.obs = self.get_observation()
-                    reward= 1 - np.amax(self.obs[:,3])  
-                else:
-                    done= False
-                    print(results)
+            info = "Scale Up Move to State S1"
+            print("reward: ",reward, np.amax(self.obs[:,4]))
 
-                    self.obs = self.get_observation()
-                    reward= 1 - np.amax(self.obs[:,3])  
-                    print(reward)
+        elif action == 3: 
+            print("Maintain Cluster State S0")
+            self.obs = self.get_observation()
+            reward= 1 - np.amax(self.obs[:,3])  
+            print("reward: ",reward, np.amax(self.obs[:,4]))
+            if (self.attempt>10):
+                done = True
+                info = "Maintain Cluster State S0"
+                reward = 1
+        elif action == 4: 
 
-                info = "Scale Up Move to State S1"
-                print("reward: ",reward, np.amax(self.obs[:,4]))
+            current_state = self.obs
 
-            elif action == 3: 
-                print("Maintain Cluster State S0")
-                self.obs = self.get_observation()
-                reward= 1 - np.amax(self.obs[:,3])  
-                print("reward: ",reward, np.amax(self.obs[:,4]))
-                if (self.attempt>10):
-                    done = True
-                    info = "Maintain Cluster State S0"
-                    reward = 1
-            elif action == 4: 
-
-                current_state = self.obs
-
-                if (self.attempt > 10 and self.node < self.maxNode and self.node >= self.minNode ):
-                    print("Add Node S4")
-                    cur_dir = os.getcwd()
-                    filepath = os.path.join(cur_dir, 'addNode.sh')
-                    print (filepath)
-                    res= subprocess.call(filepath, shell=True)
-                    print (res)
-                    info = "Add Node S4"
-                    self.obs = self.get_observation()
-                    reward= 1 - np.amax(self.obs[:,3])
-                    print("reward: ",reward, np.amax(self.obs[:,4]))
-                    done= True
-                    self.node +=1
-                    self.attempt = 0 
-                else:
-                    print("Add Node with attempt: ", self.attempt)
-                    done= False
-                    self.obs = self.get_observation()
-                    reward= 1 - np.amax(self.obs[:,3])
-                    print("reward: ",reward, np.amax(self.obs[:,4]))
-
-            elif action == 5: 
-
-                self.obs = self.get_observation()
-                if (self.attempt > 10 and self.node <= self.maxNode and self.node > self.minNode ):
-                    print("Delete Node S4")
-                    cur_dir = os.getcwd()
-                    filepath = os.path.join(cur_dir, 'deleteNode.sh')
-                    print (filepath)
-                    res= subprocess.call(filepath, shell=True)
-                    print (res)
-                    info = "Delete Node S4"
-                    reward= 1 - np.amax(self.obs[:,3])
-                    print("reward: ",reward, np.amax(self.obs[:,4]))
-                    done= True
-                    self.attempt = 0
-                    self.node -=1
-                else:
-                    print("Delete Node with attempt: ", self.attempt, self.node, self.minNode, self.maxNode)
-                    done= False
-                    reward= 0
-                    print("reward: ",reward)
-        elif self.adapte_disk:
-            if action==6:
-                print("freedisk Space S6")
+            if (self.node < self.maxNode and self.node >= self.minNode ):
+                print("Add Node S4")
                 cur_dir = os.getcwd()
-                filepath = os.path.join(cur_dir, 'freedisk.sh')
+                filepath = os.path.join(cur_dir, 'addNode.sh')
                 print (filepath)
                 res= subprocess.call(filepath, shell=True)
                 print (res)
-                info = "freedisk Node S1"
+                info = "Add Node S4"
+                self.obs = self.get_observation()
+                reward= 1 - np.amax(self.obs[:,3])
+                print("reward: ",reward, np.amax(self.obs[:,4]))
+                done= True
+                self.node +=1
+                self.attempt = 0 
+            else:
+                print("Add Node with attempt: ", self.attempt)
+                done= False
+                self.obs = self.get_observation()
+                reward= 1 - np.amax(self.obs[:,3])
+                print("reward: ",reward, np.amax(self.obs[:,4]))
+
+        elif action == 5: 
+
+            self.obs = self.get_observation()
+            if (self.attempt > 10 and self.node <= self.maxNode and self.node > self.minNode ):
+                print("Delete Node S4")
+                cur_dir = os.getcwd()
+                filepath = os.path.join(cur_dir, 'deleteNode.sh')
+                print (filepath)
+                res= subprocess.call(filepath, shell=True)
+                print (res)
+                info = "Delete Node S4"
                 reward= 1 - np.amax(self.obs[:,3])
                 print("reward: ",reward, np.amax(self.obs[:,4]))
                 done= True
                 self.attempt = 0
+                self.node -=1
+            else:
+                print("Delete Node with attempt: ", self.attempt, self.node, self.minNode, self.maxNode)
+                done= False
+                reward= 0
+                print("reward: ",reward)
 
-        elif self.adapte_net:
-            if action == 7:
-                print("Scale Down Move to State S1")
-                #Reward = max of utility fitness
+        elif action==6:
+            print("freedisk Space S6")
+            cur_dir = os.getcwd()
+            filepath = os.path.join(cur_dir, 'freedisk.sh')
+            print (filepath)
+            res= subprocess.call(filepath, shell=True)
+            print (res)
+            info = "freedisk Node S1"
+            reward= 1 - np.amax(self.obs[:,3])
+            print("reward: ",reward, np.amax(self.obs[:,4]))
+            done= True
+            self.attempt = 0
 
-                response = requests.get(' http://192.168.99.100:5000/services/vscale/web/'+ str(self.attempt) + '/' + str(self.cpu_axis[0])+'/'+str(self.cpu_axis[3]))
-                results = response.json()
-                if results['result']=='Service converged':
-                    done=True       
-                    print(results)
-                else:
-                    done= False
-                self.obs = self.get_observation()
-                reward= 1 - np.amax(self.obs[:,3])  
-                print(reward)
-                info = "Scale Down Move to State S5"
-        elif self.adapte_mem:
-             if action==8:
-                print("Add Manager node S7")
+        elif action == 7:
+            print("Scale Down Move to State S1")
+            #Reward = max of utility fitness
+
+            response = requests.get(' http://192.168.99.100:5000/services/vscale/web/'+ str(self.attempt) + '/' + str(self.cpu_axis[0])+'/'+str(self.cpu_axis[3]))
+            results = response.json()
+            if results['result']=='Service converged':
+                done=True       
+                print(results)
+            else:
+                done= False
+            self.obs = self.get_observation()
+            reward= 1 - np.amax(self.obs[:,3])  
+            print(reward)
+            info = "Scale Down Move to State S5"
+
+        elif action==8:
+
+            if (self.node < self.maxNode and self.node >= self.minNode ):
+                
                 cur_dir = os.getcwd()
                 filepath = os.path.join(cur_dir, 'manager.sh')
                 print (filepath)
                 res= subprocess.call(filepath, shell=True)
                 print (res)
-                info = "freedisk Node S1"
+                info = "Add Manager node S7"
+                self.node += 1
                 reward= 1 - np.amax(self.obs[:,3])
-                print("reward: ",reward, np.amax(self.obs[:,4]))
+                print("reward: ",reward, np.amax(self.obs[:,4]), "Node: ", self.node)
                 done= True
                 self.attempt = 0
+            else:
+                print("Add Manager node S7 failed", self.attempt)
+                reward= 0
+                done= False
+                print("reward: ",reward, np.amax(self.obs[:,4]))
         else: 
             print ("action not defined")
             self.obs = self.get_observation()

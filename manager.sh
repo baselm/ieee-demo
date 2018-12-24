@@ -1,13 +1,14 @@
 #!/bin/bash
+
 RIGHT_NOW=$(date +"%F"-"%h%M%S")
 echo $RIGHT_NOW
 docker-machine create -d virtualbox \
 --engine-label createdBy=adaptation-manager \
---engine-label role=worker \
+--engine-label role=manager \
 node-$RIGHT_NOW
 eval $(docker-machine env nupic)
 
-TOKEN=$(docker swarm join-token -q worker)
+TOKEN=$(docker swarm join-token -q manager)
 
 eval $(docker-machine env node-$RIGHT_NOW)
 

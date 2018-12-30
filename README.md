@@ -141,5 +141,5 @@ Scope offers remote access to the Swarm’s nods and containers, making it easy 
 Please see the original post and work in this github page 
 https://github.com/stefanprodan/swarmprom
 This repo is an experiment for research work in Self Adapting µServices Architecture
-# Thanks to Stefan Prodan
+Thanks to Stefan Prodan for his inspiring work
  

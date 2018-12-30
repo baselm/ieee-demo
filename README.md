@@ -27,7 +27,7 @@ The agent need to be run in the docker machine host, as it needs direct access t
 ## Run 
 ```bash
 python DQN_aftersubmission.py
-'''
+```
 The DQN_aftersubmission.ipynb contains the MDP Agent and the DQN algorithm. Running this notebook will enable the DQN to initiat the swarm and load all the services below. The agent will be able to create/remove nodes based on the current state. 
 
 Prerequisites:
@@ -69,14 +69,12 @@ docker run \
 -v mon3_docker:/model-trainer  \
 -d --restart=unless-stopped \
   baselm/swarm:787
-
- '''
+```
 * MDP Agent Implemented in Openai gym
 * It is recommanded to run a demo web service to be used for vertical scaling. Something similar to the following:
 ```bash
 docker service create --replicas 1  --label=com.docker.swarm.service.max=20  --label=com.docker.swarm.service.min=1  --label=com.docker.swarm.service.desired=2   -p 80:80 --name web nginx
-
-'''
+```
 
 ## Setup Grafana
 

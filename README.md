@@ -25,7 +25,7 @@ docker stack deploy -c basic-docker-compose.yml mon3
 The DQN agent create a leader node called nupic with ip address 192.168.99.100. Feel free to change the IP Address to suits you need. To use diffreant name for the leader you need to change it in the attached shell scripts. 
 The agent need to be run in the docker machine host, as it needs direct access to docker engine. For more information read [docker machine documentation](https://docs.docker.com/machine/)
 ## Run 
-'''
+```bash
 python DQN_aftersubmission.py
 '''
 The DQN_aftersubmission.ipynb contains the MDP Agent and the DQN algorithm. Running this notebook will enable the DQN to initiat the swarm and load all the services below. The agent will be able to create/remove nodes based on the current state. 
@@ -52,7 +52,7 @@ Services:
 * caddy (reverse proxy and basic auth provider for prometheus, alertmanager and unsee)
 * NUPIC API for collecting Observation 'http://<swarm-ip>:8888'
 * Swamr API could be used to train NUPIC Anomaly Detection service, but it is not included in this service stack. The following could be used to start the traning in the leader node. 
- '''
+ ```bash
  docker run \
   --name nupic-mysql \
   -e MYSQL_ROOT_PASSWORD=nupic \
@@ -73,7 +73,7 @@ docker run \
  '''
 * MDP Agent Implemented in Openai gym
 * It is recommanded to run a demo web service to be used for vertical scaling. Something similar to the following:
-'''
+```bash
 docker service create --replicas 1  --label=com.docker.swarm.service.max=20  --label=com.docker.swarm.service.min=1  --label=com.docker.swarm.service.desired=2   -p 80:80 --name web nginx
 
 '''

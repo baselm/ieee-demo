@@ -5,6 +5,8 @@ Swarmprom is a starter kit for Docker Swarm monitoring with [Prometheus](https:/
 [Grafana](http://grafana.org/), 
 [cAdvisor](https://github.com/google/cadvisor), 
 [Node Exporter](https://github.com/prometheus/node_exporter), 
+[NUPICAPI] (https://github.com/baselm/nupic-api.git), 
+[NUPIC] (https://github.com/numenta/nupic),
 [Alert Manager](https://github.com/prometheus/alertmanager)
 and [Unsee](https://github.com/cloudflare/unsee).
 
@@ -29,7 +31,7 @@ Prerequisites:
 * Docker engine experimental enabled and metrics address set to `0.0.0.0:9323`
 * Tensorflow 
 * Keras API installed 
-* Keras-rl https://github.com/keras-rl/keras-rl
+* [Keras-rl] https://github.com/keras-rl/keras-rl
 
 Services:
 
@@ -62,8 +64,8 @@ Swarmprom Grafana is preconfigured with two dashboards and Prometheus as the def
 After you login, click on the home drop down, in the left upper corner and you'll see the dashboards there.
 
 ***Docker Swarm Nodes Dashboard***
-
-URL: 'https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2'
+This live [snapshot] (https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2) provides a full virtualisation of all services running in the cluster.  
+A full visualised and analysis dashboard of the swarm after the adaptation can be found in this [snapshot] (https://snapshot.raintank.io/dashboard/snapshot/sstuT2tuYkob8zjIbh1YXzBYxSJDFd9z?orgId=2)
 
 URL: `http://<swarm-ip>:3000/dashboard/db/docker-swarm-nodes`
 
@@ -110,38 +112,7 @@ URL: `http://<swarm-ip>:3000/dashboard/db/prometheus`
 * Chunks ops and checkpoint duration graphs
 * Target scrapes, rule evaluation duration, samples ingested rate and scrape duration graphs
  
-## Monitoring production systems
-
-The swarmprom project is meant as a starting point in developing your own monitoring solution. Before running this 
-in production you should consider building and publishing your own Prometheus, node exporter and alert manager 
-images. Docker Swarm doesn't play well with locally built images, the first step would be to setup a secure Docker 
-registry that your Swarm has access to and push the images there. Your CI system should assign version tags to each 
-image. Don't rely on the latest tag for continuous deployments, Prometheus will soon reach v2 and the data store 
-will not be backwards compatible with v1.x.    
-
-Another thing you should consider is having redundancy for Prometheus and alert manager. 
-You could run them as a service with two replicas pinned on different nodes, or even better, 
-use a service like Weave Cloud Cortex to ship your metrics outside of your current setup. 
-You can use Weave Cloud not only as a backup of your 
-metrics database but you can also define alerts and use it as a data source for your Grafana dashboards. 
-Having the alerting and monitoring system hosted on a different platform other than your production 
-is good practice that will allow you to react quickly and efficiently when a major disaster strikes. 
-
-Swarmprom comes with built-in [Weave Cloud](https://www.weave.works/product/cloud/) integration, 
-what you need to do is run the weave-compose stack with your Weave service token:
-
-```bash
-TOKEN=<WEAVE-TOKEN> \
-ADMIN_USER=admin \
-ADMIN_PASSWORD=admin \
-docker stack deploy -c weave-compose.yml mon
-```
-
-This will deploy Weave Scope and Prometheus with Weave Cortex as remote write. 
-The local retention is set to 24h so even if your internet connection drops you'll not lose data 
-as Prometheus will retry pushing data to Weave Cloud when the connection is up again.
-
-You can define alerts and notifications routes in Weave Cloud in the same way you would do with alert manager.
+ 
 
 To use Grafana with Weave Cloud you have to reconfigure the Prometheus data source like this:
 

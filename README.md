@@ -50,10 +50,33 @@ Services:
 * alertmanager (alerts dispatcher) `http://<swarm-ip>:9093`
 * unsee (alert manager dashboard) `http://<swarm-ip>:9094`
 * caddy (reverse proxy and basic auth provider for prometheus, alertmanager and unsee)
-* NUPIC API for collecting Observation
-* Swarm-API for traning NUPIC Anomaly Detection Service 
-* MDP Agent Implemented in Open gym
+* NUPIC API for collecting Observation 'http://<swarm-ip>:8888'
+* Swamr API could be used to train NUPIC Anomaly Detection service, but it is not included in this service stack. The following could be used to start the traning in the leader node. 
+ '''
+ docker run \
+  --name nupic-mysql \
+  -e MYSQL_ROOT_PASSWORD=nupic \
+  -p 3306:3306 \
+  -d \
+  mysql:5.6
 
+docker run \
+  --name nupic \
+  -e NTA_CONF_PROP_nupic_cluster_database_passwd=nupic \
+  -e NTA_CONF_PROP_nupic_cluster_database_host=mysql \
+  --link nupic-mysql:mysql \
+  -ti \
+-v mon3_docker:/model-trainer  \
+-d --restart=unless-stopped \
+  baselm/swarm:787
+
+ '''
+* MDP Agent Implemented in Openai gym
+* It is recommanded to run a demo web service to be used for vertical scaling. Something similar to the following:
+'''
+docker service create --replicas 1  --label=com.docker.swarm.service.max=20  --label=com.docker.swarm.service.min=1  --label=com.docker.swarm.service.desired=2   -p 80:80 --name web nginx
+
+'''
 
 ## Setup Grafana
 

@@ -1,6 +1,6 @@
 from gym.envs.registration import register
 
 register(
-    id='foo-v14',
+    id='foo-v16',
     entry_point='gym_foo.envs:FooEnv',
 )

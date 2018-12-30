@@ -9,7 +9,7 @@ volumes:
     prometheus: {}
     grafana: {}
     alertmanager: {}
-    nupic: {}
+    docker: {}
 
 configs:
   caddy_config:
@@ -23,7 +23,7 @@ configs:
 
 services:
   dockerd-exporter:
-    image: stefanprodan/caddy
+    image: stefanprodan/caddy:latest
     networks:
       - net
     environment:
@@ -111,27 +111,23 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-
-
+          
   nupicapi:
-    image: baselm/nupicapi:888
+    image: baselm/nupicapi:betav3
     restart: always
     networks:
         - net
     volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
-        - nupic:/model-api
+        - docker:/model-trainer
     environment:
        NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
-       NTA_CONF_PROP_nupic_cluster_database_host: mysql
+       NTA_CONF_PROP_nupic_cluster_database_host: db 
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
+      mode: global
+
      
-  mysql:
+  db:
     image: mysql:5.6
     command: --default-authentication-plugin=mysql_native_password
     restart: always
@@ -145,7 +141,7 @@ services:
           - node.role == manager
 
   unsee:
-    image: cloudflare/unsee 
+    image: cloudflare/unsee:v0.8.0
     networks:
       - net
     environment:
@@ -200,11 +196,7 @@ services:
       - source: task_rules
         target: /etc/prometheus/swarm_task.rules.yml
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
+      mode: global
       resources:
         limits:
           memory: 2048M

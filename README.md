@@ -1,10 +1,5 @@
-Please see the original post and work in this github page 
-https://github.com/stefanprodan/swarmprom
-This repo is an experiment for research work in Self Adapting µServices Architecture
-# Thanks to Stefan Prodan
- 
 
-# swarmprom
+# Adaptation Manager
 
 Swarmprom is a starter kit for Docker Swarm monitoring with [Prometheus](https://prometheus.io/), 
 [Grafana](http://grafana.org/), 
@@ -68,7 +63,7 @@ After you login, click on the home drop down, in the left upper corner and you'l
 
 ***Docker Swarm Nodes Dashboard***
 
-![Nodes](https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2)
+URL: 'https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2'
 
 URL: `http://<swarm-ip>:3000/dashboard/db/docker-swarm-nodes`
 
@@ -86,7 +81,7 @@ This dashboard shows key metrics for monitoring the resource usage of your Swarm
 
 ***Docker Swarm Services Dashboard***
 
-![Nodes](https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2)
+URL:'https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2'
 
 URL: `http://<swarm-ip>:3000/dashboard/db/docker-swarm-services`
 
@@ -166,4 +161,8 @@ Scope offers remote access to the Swarm’s nods and containers, making it easy 
 ![Scope Hosts](https://raw.githubusercontent.com/stefanprodan/swarmprom/master/grafana/screens/weave-scope-hosts-v2.png)
 
 
-# ieee-demo
+Please see the original post and work in this github page 
+https://github.com/stefanprodan/swarmprom
+This repo is an experiment for research work in Self Adapting µServices Architecture
+# Thanks to Stefan Prodan
+ 

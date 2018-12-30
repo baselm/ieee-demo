@@ -73,7 +73,11 @@ docker run \
 * MDP Agent Implemented in Openai gym
 * It is recommanded to run a demo web service to be used for vertical scaling. Something similar to the following:
 ```bash
-docker service create --replicas 1  --label=com.docker.swarm.service.max=20  --label=com.docker.swarm.service.min=1  --label=com.docker.swarm.service.desired=2   -p 80:80 --name web nginx
+docker service create --replicas 1 \
+--label=com.docker.swarm.service.max=20 \
+--label=com.docker.swarm.service.min=1 \
+--label=com.docker.swarm.service.desired=2 \
+-p 80:80 --name web nginx
 ```
 
 ## Setup Grafana

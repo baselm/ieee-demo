@@ -5,14 +5,14 @@ Swarmprom is a starter kit for Docker Swarm monitoring with [Prometheus](https:/
 [Grafana](http://grafana.org/), 
 [cAdvisor](https://github.com/google/cadvisor), 
 [Node Exporter](https://github.com/prometheus/node_exporter), 
-[NUPICAPI] (https://github.com/baselm/nupic-api.git), 
-[NUPIC] (https://github.com/numenta/nupic),
+[NUPICAPI](https://github.com/baselm/nupic-api.git), 
+[NUPIC](https://github.com/numenta/nupic),
 [Alert Manager](https://github.com/prometheus/alertmanager)
 and [Unsee](https://github.com/cloudflare/unsee).
 
 ## Install
 
-Clone this repository and run the monitoring and adaptation stack:
+* Clone this repository and run the monitoring and adaptation stack:
 
 ```bash
 $ git clone https://github.com/baselm/ieee-demo.git
@@ -21,7 +21,12 @@ ADMIN_USER=admin \
 ADMIN_PASSWORD=admin \
 docker stack deploy -c basic-docker-compose.yml mon3
 ```
+* This repo assumes you have all the prerequisities installed and it should work out of the box by running DQN_aftersubmission.ipynb or DQN_aftersubmission.py. The foo_agent could be installed in your system using pip install -e . 
+The DQN agent create a leader node called nupic with ip address 192.168.99.100. Feel free to change the IP Address to suits you need. To use diffreant name for the leader you need to change it in the attached shell scripts. 
 ## Run 
+'''
+python DQN_aftersubmission.py
+'''
 The DQN_aftersubmission.ipynb contains the MDP Agent and the DQN algorithm. Running this notebook will enable the DQN to initiat the swarm and load all the services below. The agent will be able to create/remove nodes based on the current state. 
 
 Prerequisites:
@@ -29,9 +34,10 @@ Prerequisites:
 * Docker CE 17.09.0-ce or Docker EE 17.06.2-ee-3
 * Swarm cluster with one manager and a worker node
 * Docker engine experimental enabled and metrics address set to `0.0.0.0:9323`
-* Tensorflow 
-* Keras API installed 
-* [Keras-rl] https://github.com/keras-rl/keras-rl
+* [Tensorflow](https://www.tensorflow.org)
+* [Keras](https://keras.io)
+* [Keras-rl](https://github.com/keras-rl/keras-rl)
+* [OpenAI](https://github.com/openai/gym)
 
 Services:
 
@@ -64,8 +70,8 @@ Swarmprom Grafana is preconfigured with two dashboards and Prometheus as the def
 After you login, click on the home drop down, in the left upper corner and you'll see the dashboards there.
 
 ***Docker Swarm Nodes Dashboard***
-This live [snapshot] (https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2) provides a full virtualisation of all services running in the cluster.  
-A full visualised and analysis dashboard of the swarm after the adaptation can be found in this [snapshot] (https://snapshot.raintank.io/dashboard/snapshot/sstuT2tuYkob8zjIbh1YXzBYxSJDFd9z?orgId=2)
+This live [snapshot](https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2) provides a full virtualisation of all services running in the cluster.  
+A full visualised and analysis dashboard of the swarm after the adaptation can be found in this [snapshot](https://snapshot.raintank.io/dashboard/snapshot/sstuT2tuYkob8zjIbh1YXzBYxSJDFd9z?orgId=2)
 
 URL: `http://<swarm-ip>:3000/dashboard/db/docker-swarm-nodes`
 

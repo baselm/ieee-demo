@@ -9,7 +9,7 @@ volumes:
     prometheus: {}
     grafana: {}
     alertmanager: {}
-    portainer_data: {}
+    nupic: {}
 
 configs:
   caddy_config:
@@ -22,39 +22,6 @@ configs:
     file: ./prometheus/rules/swarm_task.rules.yml
 
 services:
-  agent:
-    image: portainer/agent
-    environment:
-      # REQUIRED: Should be equal to the service name prefixed by "tasks." when
-      # deployed inside an overlay network
-      AGENT_CLUSTER_ADDR: tasks.agent
-      # AGENT_PORT: 9001
-      # LOG_LEVEL: debug
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/volumes:/var/lib/docker/volumes
-    networks:
-      - net
-    deploy:
-      mode: global
-      placement:
-        constraints: [node.platform.os == linux]
-
-  portainer:
-    image: portainer/portainer
-    command: -H tcp://tasks.agent:9001 --tlsskipverify
-    
-    volumes:
-      - portainer_data:/data
-    networks:
-      - net
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints: [node.role == manager]
-
-
   dockerd-exporter:
     image: stefanprodan/caddy
     networks:
@@ -92,7 +59,7 @@ services:
           memory: 64M
 
   grafana:
-    image: stefanprodan/swarmprom-grafana:5.0.1
+    image: stefanprodan/swarmprom-grafana:5.3.4
     networks:
       - net
     environment:
@@ -121,7 +88,7 @@ services:
           memory: 64M
 
   alertmanager:
-    image: stefanprodan/swarmprom-alertmanager:v0.14.0
+    image: stefanprodan/swarmprom-alertmanager
     networks:
       - net
     environment:
@@ -144,9 +111,24 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-
+  nupicapi:
+    image: baselm/nupiapi_swarm:1.0
+    restart: always
+    networks:
+        - net
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - nupic:/model-api
+    environment:
+       NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
+       NTA_CONF_PROP_nupic_cluster_database_host: 192.168.99.100 
+    deploy:
+      mode: replicated
+      replicas: 3
+     
+   
   unsee:
-    image: cloudflare/unsee:v0.8.0
+    image: cloudflare/unsee 
     networks:
       - net
     environment:
@@ -154,22 +136,7 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-  nginx:
-    image: nginx:latest 
-    networks:
-      - net
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-    build:
-      context: .
-      labels:
-         - "com.docker.swarm.service.max= 20" 
-         - "com.docker.swarm.service.min= 1"
-         - "com.docker.swarm.service.desired= 2"    
+
   node-exporter:
     image: stefanprodan/swarmprom-node-exporter:v0.15.2
     networks:
@@ -227,32 +194,6 @@ services:
         reservations:
           memory: 128M
 
-  nupicapi:
-    image: baselm/nupic-api:latest
-    networks:
-        - net
-    volumes:
-        - "/var/run/docker.sock:/var/run/docker.sock"
-    environment:
-       NTA_CONF_PROP_nupic_cluster_database_passwd: nupic
-       NTA_CONF_PROP_nupic_cluster_database_host: db 
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-  db:
-    image: mysql
-    command: --default-authentication-plugin=mysql_native_password
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: nupic
-  adminer:
-    image: adminer
-    restart: always
-    networks:
-      - net
   caddy:
     image: stefanprodan/caddy
     ports:
@@ -261,10 +202,7 @@ services:
       - "9093:9093"
       - "9094:9094"
       - "8888:8888"
-      - "80:80"
-      - "8080:8080"
-      - "9000:9000"
-      - "9001:9001"
+ 
     networks:
       - net
     environment:
@@ -285,7 +223,7 @@ services:
         reservations:
           memory: 64M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://192.168.99.100:3306"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 5s
       timeout: 1s
       retries: 5

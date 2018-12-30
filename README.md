@@ -23,6 +23,7 @@ docker stack deploy -c basic-docker-compose.yml mon3
 ```
 * This repo assumes you have all the prerequisities installed and it should work out of the box by running DQN_aftersubmission.ipynb or DQN_aftersubmission.py. The foo_agent could be installed in your system using pip install -e . 
 The DQN agent create a leader node called nupic with ip address 192.168.99.100. Feel free to change the IP Address to suits you need. To use diffreant name for the leader you need to change it in the attached shell scripts. 
+The agent need to be run in the docker machine host, as it needs direct access to docker engine. For more information read [docker machine documentation](https://docs.docker.com/machine/)
 ## Run 
 '''
 python DQN_aftersubmission.py

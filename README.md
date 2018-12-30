@@ -1,6 +1,6 @@
 Please see the original post and work in this github page 
 https://github.com/stefanprodan/swarmprom
-This repo is an experiment for research work in Self-healing µServices 
+This repo is an experiment for research work in Self Adapting µServices Architecture
 # Thanks to Stefan Prodan
  
 
@@ -15,7 +15,7 @@ and [Unsee](https://github.com/cloudflare/unsee).
 
 ## Install
 
-Clone this repository and run the monitoring stack:
+Clone this repository and run the monitoring and adaptation stack:
 
 ```bash
 $ git clone https://github.com/baselm/ieee-demo.git
@@ -24,22 +24,17 @@ ADMIN_USER=admin \
 ADMIN_PASSWORD=admin \
 docker stack deploy -c basic-docker-compose.yml mon3
 ```
-'''
-ADMIN_USER=admin \
-ADMIN_PASSWORD=admin \
-SLACK_URL=https://hooks.slack.com/services/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 \
-SLACK_CHANNEL=devops-alerts \
-SLACK_USER=alertmanager \
-docker stack deploy -c local-docker-compose.yml mon
-'''
-
-
+## Run 
+The DQN_aftersubmission.ipynb contains the MDP Agent and the DQN algorithm. Running this notebook will enable the DQN to initiat the swarm and load all the services below. The agent will be able to create/remove nodes based on the current state. 
 
 Prerequisites:
 
 * Docker CE 17.09.0-ce or Docker EE 17.06.2-ee-3
 * Swarm cluster with one manager and a worker node
 * Docker engine experimental enabled and metrics address set to `0.0.0.0:9323`
+* Tensorflow 
+* Keras API installed 
+* Keras-rl https://github.com/keras-rl/keras-rl
 
 Services:
 
@@ -51,6 +46,9 @@ Services:
 * alertmanager (alerts dispatcher) `http://<swarm-ip>:9093`
 * unsee (alert manager dashboard) `http://<swarm-ip>:9094`
 * caddy (reverse proxy and basic auth provider for prometheus, alertmanager and unsee)
+* NUPIC API for collecting Observation
+* Swarm-API for traning NUPIC Anomaly Detection Service 
+* MDP Agent Implemented in Open gym
 
 
 ## Setup Grafana
@@ -70,7 +68,7 @@ After you login, click on the home drop down, in the left upper corner and you'l
 
 ***Docker Swarm Nodes Dashboard***
 
-![Nodes](https://raw.githubusercontent.com/stefanprodan/swarmprom/master/grafana/screens/swarmprom-nodes-dash-v3.png)
+![Nodes](https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2)
 
 URL: `http://<swarm-ip>:3000/dashboard/db/docker-swarm-nodes`
 
@@ -88,7 +86,7 @@ This dashboard shows key metrics for monitoring the resource usage of your Swarm
 
 ***Docker Swarm Services Dashboard***
 
-![Nodes](https://raw.githubusercontent.com/stefanprodan/swarmprom/master/grafana/screens/swarmprom-services-dash-v3.png)
+![Nodes](https://snapshot.raintank.io/dashboard/snapshot/SyKQ96o2JWfuVyc43hcGgAI9YLcjk3mW?orgId=2)
 
 URL: `http://<swarm-ip>:3000/dashboard/db/docker-swarm-services`
 
